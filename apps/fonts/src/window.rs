@@ -179,15 +179,6 @@ fn build(app: &gtk::Application) {
     stack.set_transition_type(gtk::StackTransitionType::Crossfade);
     stack.set_transition_duration(if prefs::get().reduce_motion { 0 } else { 160 });
 
-    let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    content.set_hexpand(true);
-    content.append(&stack);
-
-    let body = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    body.set_vexpand(true);
-    body.append(&nav);
-    body.append(&content);
-
     // ----- Header -----
     // The app and the page, the sidebar toggle; the search across both catalogs in the
     // middle; what's installed or installing, and Settings at the end.
@@ -202,14 +193,10 @@ fn build(app: &gtk::Application) {
     header.end.append(&readout);
     header.end.append(&chrome::settings_button(settings_dialog::open));
 
-    let frame = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    frame.add_css_class("window-frame");
-    frame.append(&header.root);
-    frame.append(&body);
-
-    let overlay = gtk::Overlay::new();
-    overlay.set_child(Some(&frame));
-    window.set_child(Some(&overlay));
+    let frame = nyx_ui::frame::AppFrame::new(&header.root);
+    frame.set_sidebar(&nav);
+    frame.set_page(&stack);
+    let overlay = frame.install(&window);
     accept_font_drops(&window);
 
     install_keys(&window, &search);

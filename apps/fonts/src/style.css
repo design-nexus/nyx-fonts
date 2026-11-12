@@ -75,19 +75,6 @@ window.fonts-window columnview > listview > header {
   color: @theme_dim_text;
 }
 
-/* Blended: the table and the preview meet without a line (the divider still drags). */
-window.fonts-window paned.browse-paned > separator {
-  min-height: 6px;
-  background: @theme_bg;
-  background-image: none;
-  border: none;
-  box-shadow: none;
-}
-
-window.fonts-window paned.browse-paned > separator:hover {
-  background: alpha(@theme_accent, 0.25);
-}
-
 /* ---------- The preview ---------- */
 
 .preview-content {
