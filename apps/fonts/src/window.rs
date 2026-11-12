@@ -134,10 +134,14 @@ fn build(app: &gtk::Application) {
     let mut last_group = "";
     for s in sections.iter().filter(|s| s.nav) {
         if s.group != last_group {
+            let first = last_group.is_empty();
             let g = widgets::label(&s.group.to_uppercase(), "nav-group");
-            if last_group.is_empty() {
+            if first {
                 g.add_css_class("first");
             }
+            // The first group in the app's accent, the others from the theme's [sections.fonts].
+            let section = if first { nyx_ui::sidebar::ACCENT_SECTION.to_string() } else { s.group.to_lowercase() };
+            nyx_ui::sidebar::set_section(&g, &section);
             list.append(&g);
             last_group = s.group;
         }
