@@ -1,15 +1,20 @@
 # Fonts — notes for working on this repo
 
 - GTK4 (gtk4-rs 0.11) + Rust. No libadwaita. Nyx Design 2.0 (`use_design_2`, see
-  `STYLE.md`): one blended surface. The unified header shows the app and the page, the
-  sidebar toggle, the search across both catalogs (always there, Ctrl+K) in the middle,
-  and the catalog and install readout and Settings at the end; no status bar. The theme,
-  widgets, settings card and header come from the `nyx-*` crates. Every colour is a
-  `@theme_*` token.
-- Pages (`sections/`) all use `sections/browse.rs`: a toolbar (filter, optional chips row
-  → `.list-toolbar.stacked`), a `FontTable` (`fonttable.rs`) and a `PreviewPanel` in a
-  vertical `Paned`. Ctrl+F focuses the visible page's `.page-search`; Ctrl+K the header's
-  search (the Search page, both catalogs).
+  `STYLE.md`) on `nyx_ui::frame`, with no sidebar: the header shows the app, the search
+  across both catalogs and this computer (Ctrl+K) in the middle, and updates, the
+  install readout and Settings at the end. Every colour is a `@theme_*` token; the
+  slots' colours are the theme's swatches as `@sw_violet`, `@sw_teal`, `@sw_amber`.
+- The page is the pairing sheet: `picker.rs` (the list: Google, Nerd Fonts, This
+  computer, or search results, in a `ListView` of section headings and font rows) beside
+  `sheet.rs` (the Heading, Body and Code slots and the Article, Interface and Terminal
+  pages). `slots.rs` holds each slot's font (`prefs.slot_*`, `source:id`), the slot being
+  chosen, and the font pointed at in the list ("trying"). Picking a row sets it in the
+  slot; the list follows the slot's font with its selection.
+- Names in the list are drawn in themselves (`names.rs`): Google cuts a file to the
+  name's letters (`fonts.googleapis.com/css2?family=…&text=…`), other fonts use their
+  preview file; four workers, first come first served, a row takes its request back
+  when it shows another font. `typeset::set` puts a label in a `preview::Loaded` font.
 - Catalogs (`catalog/`): Google `fonts.google.com/metadata/fonts` (popularity/trending
   are ranks, lower = more popular) and the download manifest
   `fonts.google.com/download/list?family=` (strip `)]}'`). Nerd Fonts: `fonts.json` in the
@@ -22,9 +27,10 @@
   `installed.rs` records files in `~/.local/state/nyx-fonts/installed.toml`; only
   paths under `~/.local/share/fonts/nyx-fonts` are ever deleted.
 - Previews (`preview.rs`): one file per family in `~/.cache/nyx-fonts/preview/`, drawn
-  through its own `FcConfig` + `PangoCairoFcFontMap` set with `widget.set_font_map`.
-  With one font in the map, every family request falls back to it. The Nerd icons line
-  sits outside that box so it uses the window's fonts.
+  through its own `FcConfig` + `PangoCairoFcFontMap` set with `widget.set_font_map`,
+  plus a fallback file: the Nerd icons for the code slot (a catalog preview is the
+  unpatched font), the system sans for names a font can't draw. Labels ask for the
+  preview's family by name, or fontconfig may pick the fallback.
 - Control (`src/control.rs`): `nyx_core::control` on the app's bus name, for Nyx Assistant: `fonts.installed`, `search`, `install` (never removes).
 - Checks: `cargo clippy --all-targets -- -D warnings`, `cargo test`. The network
   install test: `cargo test -- --ignored installs_and_removes` (scratch XDG dirs).

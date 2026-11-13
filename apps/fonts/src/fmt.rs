@@ -35,6 +35,21 @@ pub fn date(unix: i64) -> String {
     format!("{d} {} {y}", MONTHS[(m - 1) as usize])
 }
 
+/// A version for a list: Google's `2025-09-10` as `10 Sep 2025` (`10 Sep` with
+/// `year: false`); anything else as it is.
+pub fn version(v: &str, year: bool) -> String {
+    const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let parts: Vec<&str> = v.split('-').collect();
+    match parts.as_slice() {
+        [y, m, d] if y.len() == 4 => match (m.parse::<usize>(), d.parse::<u32>()) {
+            (Ok(m @ 1..=12), Ok(d)) if year => format!("{d} {} {y}", MONTHS[m - 1]),
+            (Ok(m @ 1..=12), Ok(d)) => format!("{d} {}", MONTHS[m - 1]),
+            _ => v.to_string(),
+        },
+        _ => v.to_string(),
+    }
+}
+
 /// A file size: 812 KB, 3.4 MB.
 pub fn bytes(n: u64) -> String {
     let n = n as f64;
@@ -59,5 +74,8 @@ mod tests {
         assert_eq!(date(1704209400), "2 Jan 2024");
         assert_eq!(bytes(812_000), "812 KB");
         assert_eq!(bytes(3_400_000), "3.4 MB");
+        assert_eq!(version("2025-09-10", true), "10 Sep 2025");
+        assert_eq!(version("2025-09-01", false), "1 Sep");
+        assert_eq!(version("v3.5.1", false), "v3.5.1");
     }
 }

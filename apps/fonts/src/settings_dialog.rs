@@ -1,7 +1,7 @@
 //! Settings as a card over the window: the groups listed on the left, the
 //! chosen group's options on the right, and a search across all of them.
 
-use crate::sections::settings;
+use crate::settings_page as settings;
 use crate::{widgets, window};
 use gtk::prelude::*;
 use nyx_ui::settings_card::{self, About, Spec, Standard};
@@ -11,7 +11,7 @@ pub use nyx_ui::settings_card::{escape, fit, focus_search, is_open};
 /// Each settings group's icon and one-line summary in the dialog's list.
 const GROUPS: &[(&str, &str, &str)] = &[
     ("Installing", "folder-download-symbolic", "Files, variants, font cache"),
-    ("Preview", "font-x-generic-symbolic", "Preview cache"),
+    ("Preview", "font-x-generic-symbolic", "The page's heading, preview cache"),
     ("Catalog", "view-refresh-symbolic", "Refresh the font lists"),
 ];
 

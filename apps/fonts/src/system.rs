@@ -1,10 +1,34 @@
 //! Every font family on the system, from `fc-list`.
 
 use crate::catalog::{FontEntry, PreviewFile, Source};
-use crate::paths;
+use crate::{cmd, events, paths};
+use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::Command;
+use std::rc::Rc;
+
+thread_local! {
+    static CACHED: RefCell<Rc<Vec<FontEntry>>> = RefCell::new(Rc::default());
+    static READING: Cell<bool> = const { Cell::new(false) };
+}
+
+/// The families as last read (empty until the first read finishes).
+pub fn cached() -> Rc<Vec<FontEntry>> {
+    CACHED.with(|c| c.borrow().clone())
+}
+
+/// Read the families again in the background, then tell everyone.
+pub fn refresh() {
+    if READING.with(|r| r.replace(true)) {
+        return;
+    }
+    cmd::background(list, |list| {
+        READING.with(|r| r.set(false));
+        CACHED.with(|c| *c.borrow_mut() = Rc::new(list));
+        events::emit(events::Change::System);
+    });
+}
 
 /// Read the families (blocking; run it off the UI thread).
 pub fn list() -> Vec<FontEntry> {

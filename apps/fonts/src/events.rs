@@ -15,6 +15,10 @@ pub enum Change {
     Installed,
     /// The install queue moved on (progress, a job started or finished).
     Jobs,
+    /// A slot's font, the slot being chosen, or the font being tried changed.
+    Slots,
+    /// The fonts on this computer were read again.
+    System,
 }
 
 type Callback = Rc<dyn Fn(Change)>;

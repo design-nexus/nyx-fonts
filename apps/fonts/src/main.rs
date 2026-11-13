@@ -5,18 +5,21 @@ mod cmd;
 mod control;
 mod events;
 mod fmt;
-mod fonttable;
 mod http;
 mod install;
 mod installed;
+mod names;
 mod paths;
+mod picker;
 mod prefs;
 mod preview;
-mod preview_panel;
-mod sections;
 mod settings_dialog;
+mod settings_page;
+mod sheet;
+mod slots;
 mod system;
 mod theme;
+mod typeset;
 mod widgets;
 mod window;
 
@@ -28,8 +31,8 @@ pub const APP_ID: &str = "io.github.design_nexus.nyx.Fonts";
 
 const USAGE: &str = "Usage: nyx-fonts [OPTIONS]\n\
 \n\
-  --section ID    open (or switch the open window) to a page: google, nerd, installed,\n\
-                  system, settings\n\
+  --section ID    open (or switch the open window) to a list: google, nerd, computer\n\
+                  (installed and system too), or settings\n\
   --search TEXT   search both catalogs\n\
   --toggle        close the window if it's open, otherwise open it (for a keybinding)\n";
 
@@ -42,6 +45,7 @@ fn start() {
         return;
     }
     catalog::start();
+    preview::warm_fallbacks();
     std::thread::spawn(preview::prune);
 }
 

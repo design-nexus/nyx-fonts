@@ -1,8 +1,9 @@
-/* Fonts on Nyx 2.0: only Fonts' own parts. One surface: the toolbar, the table and
-   the preview share the window's background; spacing, not lines, separates them.
-   Buttons, inputs, chips, tags and the header come from the shared sheets. */
+/* Fonts on Nyx 2.0: the pairing sheet. The list of fonts beside a page set in the
+   Heading, Body and Code slots, each slot in its theme swatch (@sw_violet, @sw_teal,
+   @sw_amber). Buttons, inputs, segmented controls and the header come from the
+   shared sheets. */
 
-/* ---------- Header and sidebar ---------- */
+/* ---------- Header ---------- */
 
 .header-status {
   font-size: 11.5px;
@@ -10,111 +11,528 @@
   font-feature-settings: "tnum";
 }
 
-window.fonts-window .app-header button.bar-button {
-  min-width: 32px;
-  min-height: 32px;
-  padding: 0;
-  border-radius: var(--nyx-radius-small);
-  box-shadow: none;
+window.fonts-window button.updates-button {
+  min-height: 28px;
+  padding: 0 10px 0 8px;
+  border: 1px solid alpha(@theme_warning, 0.3);
+  background: alpha(@theme_warning, 0.12);
+  color: @theme_warning;
+  font-weight: 600;
 }
 
-.settings-navigation .nav-count {
-  font-size: 11.5px;
+window.fonts-window button.updates-button:hover {
+  background: alpha(@theme_warning, 0.2);
+}
+
+/* ---------- Text set in a previewed font ---------- */
+
+.in-font {
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* ---------- The list ---------- */
+
+.picker {
+  background: @theme_bg;
+}
+
+.picker-tabs {
+  margin: 12px 12px 8px;
+}
+
+window.fonts-window .picker-tabs button.segment {
+  padding: 0 8px;
+}
+
+.picker-filter {
+  padding: 0 12px 8px 14px;
+}
+
+.picker-count {
   color: @theme_text_tertiary;
+  font-size: 0.923em;
   font-feature-settings: "tnum";
 }
 
-/* ---------- Pages ---------- */
+window.fonts-window dropdown.picker-dropdown > button {
+  min-width: 0;
+  min-height: 26px;
+  padding: 0 6px 0 8px;
+  font-size: 0.923em;
+}
 
-/* A page's toolbar: the filter, and under it the category chips. */
-.list-toolbar {
-  min-height: 44px;
-  margin: 0;
-  padding: 6px 16px 6px 20px;
+window.fonts-window dropdown.picker-dropdown > button label {
+  font-weight: 400;
+  color: @theme_dim_text;
+}
+
+.for-line {
+  margin: 0 10px 6px;
+  padding: 7px 8px;
+  border-radius: var(--nyx-radius-small);
+  color: @theme_dim_text;
+  font-size: 0.885em;
+}
+
+.for-line .dot {
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 4px;
+}
+
+.for-line.slot-heading { background: alpha(@sw_violet, 0.12); }
+.for-line.slot-body { background: alpha(@sw_teal, 0.12); }
+.for-line.slot-code { background: alpha(@sw_amber, 0.12); }
+.for-line.slot-heading .dot { background: @sw_violet; }
+.for-line.slot-body .dot { background: @sw_teal; }
+.for-line.slot-code .dot { background: @sw_amber; }
+
+.picker-body {
+  border-top: 1px solid @sheet_line;
+}
+
+listview.pick-list {
+  background: transparent;
+  padding: 2px 0 6px;
+}
+
+window.fonts-window listview.pick-list > row {
+  min-height: 0;
+  padding: 0;
+  margin: 2px 6px 0;
+  border-radius: var(--nyx-radius-small);
   background: transparent;
 }
 
-.list-toolbar.stacked {
-  padding: 10px 16px 10px 20px;
+window.fonts-window listview.pick-list > row:hover {
+  background: @row_hover;
 }
 
-.list-toolbar.stacked > .chip-row {
-  margin-top: 10px;
+window.fonts-window listview.pick-list > row:selected {
+  background: @nav_active;
+  box-shadow: inset 0 0 0 1px alpha(@theme_accent, 0.3);
 }
 
-entry.page-search {
-  margin: 0;
+.pick-row {
+  padding: 7px 10px 8px 12px;
 }
 
-/* ---------- The table ---------- */
-
-window.fonts-window columnview.font-table > header > button {
-  min-height: 32px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-}
-
-window.fonts-window columnview.font-table > header > button > box > label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: @theme_text_tertiary;
-}
-
-window.fonts-window columnview.font-table > header > button:hover > box > label {
+.pick-name {
   color: @theme_text;
 }
 
-window.fonts-window columnview > listview > header {
-  background: transparent;
+.pick-meta {
+  color: @theme_text_tertiary;
+  font-size: 0.846em;
 }
 
-.cell-dim {
-  color: @theme_dim_text;
-}
-
-/* ---------- The preview ---------- */
-
-.preview-content {
-  padding: 14px 24px 16px;
-}
-
-.settings-page.narrow .preview-content {
-  padding: 12px 16px 14px;
-}
-
-.preview-title {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.preview-detail {
-  font-size: 12px;
-  font-weight: 400;
-  color: @theme_dim_text;
-}
-
-.preview-progress {
-  font-size: 12px;
+.pick-glyphs {
+  font-family: "Symbols Nerd Font", "JetBrainsMono Nerd Font";
+  font-size: 13px;
+  letter-spacing: 1px;
   color: @theme_accent;
+}
+
+.pick-ok {
+  color: @theme_success;
+  -gtk-icon-size: 15px;
+}
+
+.pick-update {
+  color: @theme_warning;
+  font-weight: 600;
+  font-size: 0.846em;
+}
+
+.pick-busy {
+  color: @theme_accent;
+  font-size: 0.846em;
   font-feature-settings: "tnum";
 }
 
-.preview-fonts {
-  padding-top: 6px;
+.pick-sec {
+  padding: 12px 8px 4px 12px;
 }
 
-/* Drawn in the previewed font, so the window's font and weight don't apply. */
-.preview-text {
-  font-family: sans-serif;
-  font-weight: 400;
+.pick-sec-title,
+.pick-sec-count {
+  font-size: 0.846em;
+  font-weight: 600;
+  color: @theme_text_tertiary;
+  letter-spacing: 0.05em;
 }
 
-.preview-icons {
-  font-family: "Symbols Nerd Font", "JetBrainsMono Nerd Font";
-  font-size: 1.6em;
-  letter-spacing: 6px;
+.pick-sec-count {
+  font-weight: 500;
+  font-feature-settings: "tnum";
+}
+
+.slot-tag {
+  min-height: 20px;
+  padding: 0 7px;
+  border-radius: 10px;
+  font-size: 0.769em;
+  font-weight: 700;
+}
+
+.slot-tag.slot-heading { color: @sw_violet; background: alpha(@sw_violet, 0.15); }
+.slot-tag.slot-body { color: @sw_teal; background: alpha(@sw_teal, 0.15); }
+.slot-tag.slot-code { color: @sw_amber; background: alpha(@sw_amber, 0.15); }
+
+window.fonts-window button.small {
+  min-height: 26px;
+  padding: 0 9px;
+  font-size: 0.923em;
+}
+
+window.fonts-window button.small.icon-button {
+  min-width: 26px;
+  padding: 0;
+}
+
+window.fonts-window button.destructive-text {
+  border: 1px solid alpha(@theme_danger, 0.35);
+  background: transparent;
+  color: @theme_danger;
+}
+
+window.fonts-window button.destructive-text:hover {
+  background: alpha(@theme_danger, 0.1);
+}
+
+window.fonts-window button.drop-foot {
+  margin: 6px 10px 10px;
+  min-height: 40px;
+  border-radius: var(--nyx-radius-card);
+  border: 1.5px dashed alpha(@theme_text, 0.14);
+  background: transparent;
+  color: @theme_text_tertiary;
+  font-size: 0.846em;
+}
+
+window.fonts-window button.drop-foot:hover {
+  background: @row_hover;
+}
+
+/* ---------- The sheet ---------- */
+
+.sheet {
+  background: mix(@theme_bg, @theme_text, 0.025);
+}
+
+.slot-bar {
+  padding: 10px 12px;
+  background: @theme_bg;
+  border-bottom: 1px solid @sheet_line;
+}
+
+window.fonts-window button.slot-card {
+  min-height: 0;
+  padding: 5px 10px 6px 0;
+  border-radius: var(--nyx-radius-card);
+  background: @field;
+  box-shadow: inset 0 0 0 1px alpha(@theme_text, 0.07);
+}
+
+.slot-stripe {
+  min-width: 3px;
+  margin: 3px 9px 3px 0;
+  border-radius: 0 2px 2px 0;
+}
+
+.slot-key {
+  font-size: 0.769em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.slot-name {
+  color: @theme_text;
+}
+
+.slot-ok {
+  color: @theme_success;
+  -gtk-icon-size: 12px;
+}
+
+.slot-chevron {
   color: @theme_dim_text;
+  -gtk-icon-size: 13px;
+}
+
+.slot-card.slot-heading .slot-stripe { background: @sw_violet; }
+.slot-card.slot-body .slot-stripe { background: @sw_teal; }
+.slot-card.slot-code .slot-stripe { background: @sw_amber; }
+.slot-card.slot-heading .slot-key { color: @sw_violet; }
+.slot-card.slot-body .slot-key { color: @sw_teal; }
+.slot-card.slot-code .slot-key { color: @sw_amber; }
+
+window.fonts-window button.slot-card.on.slot-heading {
+  background: mix(@theme_card, @sw_violet, 0.14);
+  box-shadow: inset 0 0 0 2px alpha(@sw_violet, 0.6);
+}
+
+window.fonts-window button.slot-card.on.slot-body {
+  background: mix(@theme_card, @sw_teal, 0.14);
+  box-shadow: inset 0 0 0 2px alpha(@sw_teal, 0.6);
+}
+
+window.fonts-window button.slot-card.on.slot-code {
+  background: mix(@theme_card, @sw_amber, 0.14);
+  box-shadow: inset 0 0 0 2px alpha(@sw_amber, 0.6);
+}
+
+scrolledwindow.desk {
+  background: transparent;
+}
+
+.desk-page {
+  margin: 22px 26px;
+}
+
+/* The article: a sheet of paper. Its blocks sit 10px in, so an outlined block's
+   text lines up with the rest. */
+.paper {
+  padding: 30px 28px 32px;
+  border-radius: 6px;
+  background: @theme_card;
+  box-shadow: 0 1px 2px alpha(@theme_shadow, 0.3), 0 10px 30px alpha(@theme_shadow, 0.3), inset 0 0 0 1px alpha(@theme_text, 0.06);
+}
+
+.paper > * {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.paper > overlay.zone-wrap {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.kicker {
+  color: @sw_teal;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.zone {
+  margin-top: 10px;
+  padding: 6px 10px 8px;
+  border-radius: 8px;
+}
+
+.zone.on.slot-heading { box-shadow: 0 0 0 2px @sw_violet; background: alpha(@sw_violet, 0.06); }
+.zone.on.slot-body { box-shadow: 0 0 0 2px @sw_teal; background: alpha(@sw_teal, 0.06); }
+.zone.on.slot-code { box-shadow: 0 0 0 2px @sw_amber; background: alpha(@sw_amber, 0.06); }
+
+.zone-tag {
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.zone-tag.slot-heading { background: @sw_violet; }
+.zone-tag.slot-body { background: @sw_teal; }
+.zone-tag.slot-code { background: @sw_amber; }
+
+.headline,
+.paragraph,
+.quote,
+.ui-heading,
+.size-sample {
+  color: @theme_text;
+}
+
+.standfirst {
+  margin-top: 4px;
+  color: @theme_dim_text;
+}
+
+.byline {
+  margin-top: 10px;
+  color: @theme_text_tertiary;
+}
+
+.columns {
+  margin-top: 18px;
+}
+
+.quote {
+  margin-top: 18px;
+  padding-left: 16px;
+  border-left: 3px solid @sw_violet;
+}
+
+.code-line {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: alpha(@theme_text, 0.05);
+  color: @theme_dim_text;
+}
+
+.set-line {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid alpha(@theme_text, 0.08);
+  color: @theme_text_tertiary;
+  font-size: 11.5px;
+}
+
+/* An app's interface. */
+.ui-window {
+  border-radius: 10px;
+  background: @theme_card;
+  box-shadow: 0 1px 2px alpha(@theme_shadow, 0.3), 0 10px 30px alpha(@theme_shadow, 0.3), inset 0 0 0 1px alpha(@theme_text, 0.06);
+}
+
+.ui-titlebar {
+  padding: 9px 12px;
+  border-bottom: 1px solid alpha(@theme_text, 0.07);
+}
+
+.win-dot {
+  min-width: 9px;
+  min-height: 9px;
+  border-radius: 5px;
+  background: alpha(@theme_text, 0.18);
+}
+
+.ui-title,
+.ui-desc,
+.ui-nav {
+  color: @theme_dim_text;
+}
+
+.ui-side {
+  min-width: 140px;
+  padding: 12px 8px;
+  border-right: 1px solid alpha(@theme_text, 0.07);
+}
+
+.ui-nav {
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.ui-nav.active {
+  background: @nav_active;
+  color: @theme_text;
+}
+
+.ui-main {
+  padding: 8px 14px 18px;
+}
+
+.ui-button {
+  padding: 7px 14px;
+  border-radius: var(--nyx-radius-small);
+  background: alpha(@theme_text, 0.05);
+  box-shadow: inset 0 0 0 1px alpha(@theme_text, 0.08);
+}
+
+.ui-button.primary {
+  background: @theme_accent;
+  color: @theme_on_accent;
+  box-shadow: none;
+}
+
+.ui-table {
+  margin-top: 6px;
+}
+
+.ui-field-name {
+  color: @theme_text_tertiary;
+}
+
+.ui-field {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: alpha(@theme_text, 0.05);
+  color: @theme_dim_text;
+}
+
+/* A terminal: its own colours whatever the theme, as terminals have. */
+.terminal {
+  border-radius: 10px;
+  background: #14151b;
+  box-shadow: 0 10px 30px alpha(@theme_shadow, 0.4), 0 0 0 1px alpha(@theme_text, 0.06);
+}
+
+.term-bar {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 10px 10px 0 0;
+  background: #1d1e26;
+}
+
+.term-bar .win-dot {
+  background: #3a3c4a;
+}
+
+.term-title {
+  margin-left: 8px;
+  color: #8a8ea8;
+  font-size: 12px;
+}
+
+.term-body {
+  padding: 14px 16px 16px;
+}
+
+.term-line {
+  color: #c9cbd8;
+}
+
+.term-card {
+  margin-top: 14px;
+  padding-bottom: 6px;
+}
+
+.term-card-head {
+  padding: 10px 14px 4px;
+}
+
+.term-card-title {
+  font-weight: 600;
+}
+
+checkbutton.variant {
+  min-height: 40px;
+  padding: 4px 14px;
+}
+
+.variant-desc,
+.size-px {
+  color: @theme_text_tertiary;
+  font-size: 0.846em;
+}
+
+.size-row {
+  padding: 5px 14px;
+}
+
+/* ---------- A narrow window ---------- */
+
+.sheet.narrow .slot-bar {
+  padding: 8px;
+}
+
+window.fonts-window .sheet.narrow button.slot-card {
+  padding: 4px 8px 5px 0;
+}
+
+.sheet.narrow .slot-key {
+  font-size: 0.692em;
+}
+
+.sheet.narrow .desk-page {
+  margin: 14px;
+}
+
+.sheet.narrow .paper {
+  padding: 20px 10px 22px;
 }

@@ -2,29 +2,30 @@
 
 A font manager for [Omarchy](https://omarchy.org). Search every family on
 [Google Fonts](https://fonts.google.com) and every [Nerd Font](https://www.nerdfonts.com),
-preview them in your own sample text, and install them with one click. It takes its
-colors from your Omarchy theme and fits a half-screen tile.
+choose them by setting a real page with them, and install them with one click. It takes
+its colors from your Omarchy theme and fits a half-screen tile.
 
 ## What it does
 
-- **Google Fonts:** all ~1,950 families in one table. Filter by name, designer or
-  language, show one category (sans serif, serif, display, handwriting, monospace), and
-  sort by popularity, trending, name or newest.
+- **A pairing sheet:** the page has three slots, Heading, Body and Code. Pick a slot,
+  point at a font in the list and the page changes; click it to keep it. The page can
+  be an article, an app's interface or a terminal, where Nerd Font icons and ligatures
+  show. Install every font on the page in one go. Nothing is installed to preview a
+  font: one file is downloaded to a cache, and each name in the list is drawn in itself.
+- **Google Fonts:** all ~1,950 families, each name in its own font. Show one category
+  (sans serif, serif, display, handwriting, monospace), and sort by popularity,
+  trending, name or newest.
 - **Nerd Fonts:** every font from the latest
   [Nerd Fonts release](https://github.com/ryanoasis/nerd-fonts/releases), patched with
   thousands of icons for terminals and editors.
-- **Live preview:** select a font to see your sample text in it at any size, with the
-  full alphabet and numbers. Nothing is installed to preview a font: one file is
-  downloaded to a cache.
 - **Install for your user:** fonts go to `~/.local/share/fonts/nyx-fonts`, no sudo
   needed, and the font cache is refreshed so other apps see them right away. Choose
   static or variable files for Google Fonts, and which Nerd Font variants to keep
   (Mono for terminals, regular and Propo).
-- **Installed:** everything installed with Fonts, with its version and size. When a
-  newer version comes out, update one font or all of them; remove fonts you don't need.
-- **System fonts:** every font family on your computer, marked as installed by Fonts,
-  by you, or by the system, each with a preview.
-- **Search** both catalogs at once (<kbd>Ctrl</kbd>+<kbd>K</kbd>, or the search button at the top of the sidebar).
+- **This computer:** updates first (update one font or all of them), then everything
+  installed with Fonts, with its size and Remove, then every other font on your computer,
+  from the system or added by you. Drop .ttf or .otf files on the window to add them.
+- **Search** Google Fonts, Nerd Fonts and this computer at once (<kbd>Ctrl</kbd>+<kbd>K</kbd>).
 - The font lists are cached and refreshed once a day, so browsing works offline.
 
 ## Install
@@ -47,18 +48,16 @@ nyx-fonts [OPTIONS]
 
 | Option | What |
 | --- | --- |
-| `--section ID` | Open a page: `google`, `nerd`, `installed`, `system`, `settings` |
-| `--search TEXT` | Search both catalogs |
+| `--section ID` | Open a list: `google`, `nerd`, `computer` (or `installed`, `system`), or `settings` |
+| `--search TEXT` | Search both catalogs and this computer |
 | `--toggle` | Close the window if it's open, otherwise open it |
 
 | Key | What |
 | --- | --- |
-| <kbd>Ctrl</kbd>+<kbd>F</kbd> | Filter this page |
-| <kbd>Ctrl</kbd>+<kbd>K</kbd> | Search both catalogs |
+| <kbd>Ctrl</kbd>+<kbd>K</kbd> or <kbd>Ctrl</kbd>+<kbd>F</kbd> | Search |
 | <kbd>Esc</kbd> | Clear the search |
-| <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>4</kbd> | Go to a page in the sidebar |
-| <kbd>Alt</kbd>+<kbd>←</kbd> or the mouse's back button | Back |
-| <kbd>Ctrl</kbd>+<kbd>B</kbd> | Collapse or expand the sidebar |
+| <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>3</kbd> | Google, Nerd Fonts or This computer |
+| <kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>3</kbd> | Choose the heading, body or code font |
 | <kbd>Ctrl</kbd>+<kbd>,</kbd> | Settings |
 | <kbd>F1</kbd> or <kbd>?</kbd> | Show the shortcuts |
 | <kbd>Ctrl</kbd>+<kbd>Q</kbd> | Close |
@@ -69,7 +68,7 @@ nyx-fonts [OPTIONS]
 | --- | --- |
 | `~/.local/share/fonts/nyx-fonts/` | Installed fonts, one folder per family |
 | `~/.local/state/nyx-fonts/installed.toml` | What was installed, from where, and which version |
-| `~/.config/nyx-fonts/settings.toml` | Preferences: install options, preview, theme |
+| `~/.config/nyx-fonts/settings.toml` | Preferences: install options, the page's fonts, theme |
 | `~/.config/nyx-fonts/themes/*.toml` | Your own themes |
 | `~/.cache/nyx-fonts/` | The font lists and preview files |
 

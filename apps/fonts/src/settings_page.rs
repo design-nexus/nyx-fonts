@@ -1,3 +1,6 @@
+//! The settings dialog's options: installing, the page, and the catalogs.
+
+use crate::catalog::nerd;
 use crate::widgets::{self, Page};
 use crate::{catalog, events, fmt, paths, prefs, window};
 use gtk::glib;
@@ -19,13 +22,7 @@ pub fn build(page: &Page) {
         &p.google_files,
         |v| prefs::update(|p| p.google_files = v),
     ));
-    g.add(&widgets::segmented_row(
-        "Nerd Fonts variants",
-        "Mono has single-width icons, for terminals. The regular and Propo variants suit editors and documents.",
-        widgets::opts(&[("all", "All"), ("mono", "Mono only"), ("regular", "No Mono")]),
-        &p.nerd_variants,
-        |v| prefs::update(|p| p.nerd_variants = v),
-    ));
+    g.add(&nerd_variants_row(&p.nerd_variants));
     let (r, _) = widgets::switch_row(
         "Refresh the font cache",
         "Run fc-cache after installing or removing, so other apps see the change straight away.",
@@ -34,20 +31,28 @@ pub fn build(page: &Page) {
     );
     g.add(&r);
 
-    // ----- Preview -----
+    // ----- The page -----
     let g = page.group("Preview");
     let sample = gtk::Entry::new();
-    sample.set_text(&p.sample);
-    sample.set_width_chars(18);
+    sample.set_text(&p.headline());
+    sample.set_placeholder_text(Some(prefs::DEFAULT_SAMPLE));
+    sample.set_width_chars(22);
     sample.connect_changed(|e| {
         prefs::update(|p| p.sample = e.text().to_string());
         events::emit(events::Change::Preferences);
     });
-    g.add(&widgets::row("Preview text", "Sample shown when previewing a font.", Some(sample.upcast_ref())));
-    let size = gtk::SpinButton::with_range(8.0, 96.0, 1.0);
+    g.add(&widgets::row("Heading", "The words the page's heading is set in.", Some(sample.upcast_ref())));
+    let size = gtk::SpinButton::with_range(16.0, 90.0, 1.0);
     size.set_value(p.preview_size);
-    size.connect_value_changed(|s| { prefs::update(|p| p.preview_size = s.value()); events::emit(events::Change::Preferences); });
-    g.add(&widgets::row("Preview size", "Text size in points.", Some(size.upcast_ref())));
+    size.connect_value_changed(|s| {
+        prefs::update(|p| p.preview_size = s.value());
+        events::emit(events::Change::Preferences);
+    });
+    g.add(&widgets::row(
+        "Heading size",
+        "In points, for the article; the interface's heading is smaller.",
+        Some(size.upcast_ref()),
+    ));
     let (r, _) = widgets::button_row("Clear the preview cache", "Delete downloaded preview files.", "Clear", |_| {
         let dir = paths::preview_dir();
         let size: u64 =
@@ -59,9 +64,16 @@ pub fn build(page: &Page) {
 
     // ----- Catalog -----
     let g = page.group("Catalog");
-    let (row, _) = widgets::choice_row("Sort Google Fonts by", "Default order for the font catalog.",
+    let (row, _) = widgets::choice_row(
+        "Sort Google Fonts by",
+        "Default order for the font catalog.",
         widgets::opts(&[("popular", "Popular"), ("trending", "Trending"), ("name", "Name"), ("newest", "Newest")]),
-        &p.google_sort, |id| { prefs::update(|p| p.google_sort = id); events::emit(events::Change::Preferences); });
+        &p.google_sort,
+        |id| {
+            prefs::update(|p| p.google_sort = id);
+            events::emit(events::Change::Preferences);
+        },
+    );
     g.add(&row);
     let (row, button) = widgets::button_row("Refresh the font lists", "", "Refresh now", |_| catalog::refresh());
     g.add(&row);
@@ -99,4 +111,55 @@ pub fn build(page: &Page) {
             refresh();
         }
     });
+}
+
+/// Mono, Regular and Propo, each kept or not; the Terminal page sets the same.
+fn nerd_variants_row(current: &str) -> gtk::Box {
+    let checks = widgets::hbox(12);
+    let keep = nerd::variants(current);
+    let mut all: Vec<(&'static str, gtk::CheckButton)> = Vec::new();
+    for (id, title) in [("mono", "Mono"), ("regular", "Regular"), ("propo", "Propo")] {
+        let c = gtk::CheckButton::with_label(title);
+        c.set_active(keep.contains(&id));
+        checks.append(&c);
+        all.push((id, c));
+    }
+    let all = std::rc::Rc::new(all);
+    // Set while the checks follow the settings, which isn't a choice.
+    let syncing = std::rc::Rc::new(std::cell::Cell::new(false));
+    for (_, c) in all.iter() {
+        let (all, syncing) = (all.clone(), syncing.clone());
+        c.connect_toggled(move |c| {
+            if syncing.get() {
+                return;
+            }
+            let picked: Vec<&str> = all.iter().filter(|(_, c)| c.is_active()).map(|(id, _)| *id).collect();
+            if picked.is_empty() {
+                c.set_active(true);
+                return;
+            }
+            let value = picked.join(",");
+            if prefs::get().nerd_variants != value {
+                prefs::update(|p| p.nerd_variants = value);
+                events::emit(events::Change::Preferences);
+            }
+        });
+    }
+    let row = widgets::row(
+        "Nerd Fonts variants",
+        "Mono has single-width icons, for terminals. Regular suits editors and bars, Propo interfaces and documents.",
+        Some(checks.upcast_ref()),
+    );
+    let all2 = all.clone();
+    events::subscribe(&row, move |c| {
+        if c == events::Change::Preferences {
+            let keep = nerd::variants(&prefs::get().nerd_variants);
+            syncing.set(true);
+            for (id, c) in all2.iter() {
+                c.set_active(keep.contains(id));
+            }
+            syncing.set(false);
+        }
+    });
+    row
 }

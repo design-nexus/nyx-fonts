@@ -94,14 +94,23 @@ pub fn variant(file: &str) -> &'static str {
     }
 }
 
-/// Whether to keep a file for the chosen variants: `all`, `mono` or `regular`
-/// (regular and Propo).
+/// Every variant, in the order they're offered.
+pub const VARIANTS: [&str; 3] = ["mono", "regular", "propo"];
+
+/// The variants a preference keeps: a comma list, or an older `all`, `mono` or
+/// `regular` (regular and Propo). Never none.
+pub fn variants(pref: &str) -> Vec<&'static str> {
+    let picked: Vec<&'static str> = match pref {
+        "all" | "" => VARIANTS.to_vec(),
+        "regular" => vec!["regular", "propo"],
+        _ => VARIANTS.iter().copied().filter(|v| pref.split(',').any(|p| p.trim() == *v)).collect(),
+    };
+    if picked.is_empty() { VARIANTS.to_vec() } else { picked }
+}
+
+/// Whether to keep a file for the chosen variants.
 pub fn keep(file: &str, which: &str) -> bool {
-    match which {
-        "mono" => variant(file) == "mono",
-        "regular" => variant(file) != "mono",
-        _ => true,
-    }
+    variants(which).contains(&variant(file))
 }
 
 #[cfg(test)]
@@ -133,5 +142,9 @@ mod tests {
         assert!(!keep("HackNerdFontMono-Bold.ttf", "regular"));
         assert!(!keep("HackNerdFont-Regular.ttf", "mono"));
         assert!(keep("HackNerdFont-Regular.ttf", "all"));
+        assert!(keep("HackNerdFontMono-Bold.ttf", "mono,regular"));
+        assert!(!keep("HackNerdFontPropo-Bold.ttf", "mono,regular"));
+        assert_eq!(variants("propo"), vec!["propo"]);
+        assert_eq!(variants("nonsense"), VARIANTS.to_vec());
     }
 }

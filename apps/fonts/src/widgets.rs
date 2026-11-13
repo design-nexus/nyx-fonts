@@ -30,14 +30,6 @@ pub fn page(section: &str) -> Page {
 }
 
 impl Page {
-    /// For pages whose content scrolls itself (tables): the page stops scrolling
-    /// and hands its height to the last child.
-    pub fn fill(&self) {
-        self.root.set_vscrollbar_policy(gtk::PolicyType::Never);
-        self.body.set_vexpand(true);
-        self.body.add_css_class("fill");
-    }
-
     pub fn group(&self, title: &str) -> Group {
         let wrapper = gtk::Box::new(gtk::Orientation::Vertical, 0);
         wrapper.add_css_class("settings-group");
