@@ -151,18 +151,44 @@ fn read_cache() -> Option<Raw> {
     Some(Raw { google: read("google.json")?, nerd: read("nerd.json")?, release: read("nerd-release.json")? })
 }
 
-fn fetch() -> Result<Raw> {
-    let raw = Raw {
-        google: http::get_text(google::METADATA_URL)?,
-        nerd: http::get_text(nerd::FONTS_URL)?,
-        release: http::get_text(nerd::RELEASE_URL)?,
+/// Fetch each list on its own, so one source failing (Google's list is the site's own
+/// JSON, not a published API) leaves the other fresh. A list that can't be fetched or
+/// read falls back to its saved copy; what fell back is returned to be shown.
+fn fetch() -> Result<(Raw, Vec<String>)> {
+    let saved = |n: &str| std::fs::read_to_string(cache_file(n)).ok();
+    let mut problems = Vec::new();
+    // Check each parses before replacing a good cache.
+    let google = match http::get_text(google::METADATA_URL).and_then(|t| google::parse(&t).map(|_| t)) {
+        Ok(text) => {
+            cmd::atomic_write(&cache_file("google.json"), &text)?;
+            text
+        }
+        Err(e) => {
+            problems.push(format!("Google Fonts' list couldn't be read ({e:#})"));
+            saved("google.json").ok_or(e)?
+        }
     };
-    // Check they parse before replacing a good cache.
-    parse(&raw)?;
-    cmd::atomic_write(&cache_file("google.json"), &raw.google)?;
-    cmd::atomic_write(&cache_file("nerd.json"), &raw.nerd)?;
-    cmd::atomic_write(&cache_file("nerd-release.json"), &raw.release)?;
-    Ok(raw)
+    let nerd_lists = http::get_text(nerd::FONTS_URL).and_then(|fonts| {
+        let release = http::get_text(nerd::RELEASE_URL)?;
+        let parsed = nerd::parse_release(&release)?;
+        nerd::parse(&fonts, &parsed)?;
+        Ok((fonts, release))
+    });
+    let (nerd, release) = match nerd_lists {
+        Ok((fonts, release)) => {
+            cmd::atomic_write(&cache_file("nerd.json"), &fonts)?;
+            cmd::atomic_write(&cache_file("nerd-release.json"), &release)?;
+            (fonts, release)
+        }
+        Err(e) => {
+            problems.push(format!("the Nerd Fonts list couldn't be read ({e:#})"));
+            match (saved("nerd.json"), saved("nerd-release.json")) {
+                (Some(fonts), Some(release)) => (fonts, release),
+                _ => return Err(e),
+            }
+        }
+    };
+    Ok((Raw { google, nerd, release }, problems))
 }
 
 type Parsed = (Vec<FontEntry>, Vec<FontEntry>, String);
@@ -209,7 +235,7 @@ pub fn refresh() {
     STATE.with(|s| s.borrow_mut().loading = true);
     events::emit(events::Change::Catalog);
     cmd::background(
-        || fetch().and_then(|raw| parse(&raw)),
+        || fetch().and_then(|(raw, problems)| Ok((parse(&raw)?, problems))),
         |res| {
             STATE.with(|s| {
                 let mut s = s.borrow_mut();
@@ -217,10 +243,20 @@ pub fn refresh() {
                 s.loaded = true;
             });
             match res {
-                Ok(p) => {
+                Ok((p, problems)) if problems.is_empty() => {
                     set(p);
                     STATE.with(|s| s.borrow_mut().error = None);
                     prefs::update(|p| p.catalog_fetched = now());
+                }
+                Ok((p, problems)) => {
+                    set(p);
+                    let mut msg = problems.join("; ");
+                    msg.push_str(". Showing the saved copy.");
+                    if let Some(first) = msg.get(..1) {
+                        msg.replace_range(..1, &first.to_uppercase());
+                    }
+                    STATE.with(|s| s.borrow_mut().error = Some(msg.clone()));
+                    crate::window::toast(&msg);
                 }
                 Err(e) => {
                     let msg = format!("{e:#}");

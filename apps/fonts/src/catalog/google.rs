@@ -1,5 +1,7 @@
 //! Google Fonts: the family list from `fonts.google.com/metadata/fonts`, and
-//! each family's files from the download manifest its Download button uses.
+//! each family's files from the download manifest its Download button uses. Both are the
+//! site's own JSON, not a published API; when the download list can't be read, the files
+//! come from Google's `google/fonts` repository on GitHub instead.
 
 use super::{FontEntry, PreviewFile, Source};
 use crate::http;
@@ -111,7 +113,74 @@ pub fn parse_manifest(text: &str) -> Result<Manifest> {
 
 pub fn manifest(family: &str) -> Result<Manifest> {
     let url = format!("https://fonts.google.com/download/list?family={}", http::encode(family));
-    parse_manifest(&http::get_text(&url)?)
+    let site = http::get_text(&url).and_then(|text| parse_manifest(&text));
+    match site {
+        Ok(m) if !m.file_refs.is_empty() => Ok(m),
+        Ok(_) => github_manifest(family),
+        Err(site_error) => github_manifest(family).map_err(|github_error| {
+            anyhow::anyhow!(
+                "Google Fonts' download list couldn't be read ({site_error:#}), and Google's font repository on GitHub didn't have it either ({github_error:#})"
+            )
+        }),
+    }
+}
+
+/// The family's folder in `google/fonts`: its name in lower case, letters and digits only
+/// ("Roboto Mono" → `robotomono`).
+pub fn repo_dir(family: &str) -> String {
+    family.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect()
+}
+
+#[derive(Debug, Deserialize)]
+struct RepoItem {
+    name: String,
+    #[serde(rename = "type")]
+    kind: String,
+    #[serde(default)]
+    download_url: Option<String>,
+}
+
+type Listing = (Vec<FileRef>, Vec<(String, String)>, bool);
+
+/// One folder of the GitHub contents API: its font files (named under `prefix`), its
+/// text files (license, notes), and whether it has a `static` folder.
+fn repo_listing(text: &str, prefix: &str) -> Result<Listing> {
+    let items: Vec<RepoItem> = serde_json::from_str(text).context("unexpected GitHub folder listing")?;
+    let mut fonts = Vec::new();
+    let mut texts = Vec::new();
+    let mut has_static = false;
+    for item in items {
+        match (item.kind.as_str(), item.download_url) {
+            ("dir", _) if item.name == "static" => has_static = true,
+            ("file", Some(url)) if is_font(&item.name) => fonts.push(FileRef { filename: format!("{prefix}{}", item.name), url }),
+            ("file", Some(url)) if item.name.to_ascii_lowercase().ends_with(".txt") => texts.push((item.name, url)),
+            _ => {}
+        }
+    }
+    Ok((fonts, texts, has_static))
+}
+
+/// The family's files from `google/fonts` (`ofl/`, `apache/` or `ufl/`).
+fn github_manifest(family: &str) -> Result<Manifest> {
+    let dir = repo_dir(family);
+    let api = "https://api.github.com/repos/google/fonts/contents";
+    for licence in ["ofl", "apache", "ufl"] {
+        let Ok(text) = http::get_text(&format!("{api}/{licence}/{dir}")) else { continue };
+        let (mut file_refs, texts, has_static) = repo_listing(&text, "")?;
+        if has_static {
+            let text = http::get_text(&format!("{api}/{licence}/{dir}/static"))?;
+            file_refs.extend(repo_listing(&text, "static/")?.0);
+        }
+        if file_refs.is_empty() {
+            continue;
+        }
+        let files = texts
+            .into_iter()
+            .filter_map(|(filename, url)| Some(InlineFile { filename, contents: http::get_text(&url).ok()? }))
+            .collect();
+        return Ok(Manifest { files, file_refs });
+    }
+    anyhow::bail!("no folder for {family} in google/fonts")
 }
 
 fn is_font(name: &str) -> bool {
@@ -119,12 +188,19 @@ fn is_font(name: &str) -> bool {
     n.ends_with(".ttf") || n.ends_with(".otf")
 }
 
+/// A variable font: Google's download names it `…-VariableFont_wght.ttf`, its GitHub
+/// repository `…[wght].ttf`.
+fn is_variable(name: &str) -> bool {
+    let base = name.rsplit('/').next().unwrap_or(name);
+    base.contains("VariableFont") || base.contains('[')
+}
+
 /// The font files to install: `static`, `variable` or `both`. A family with
 /// only one kind gets that kind whatever the choice.
 pub fn pick_files<'a>(refs: &'a [FileRef], which: &str) -> Vec<&'a FileRef> {
     let fonts: Vec<&FileRef> = refs.iter().filter(|r| is_font(&r.filename)).collect();
-    let variable: Vec<&FileRef> = fonts.iter().copied().filter(|r| r.filename.contains("VariableFont")).collect();
-    let fixed: Vec<&FileRef> = fonts.iter().copied().filter(|r| !r.filename.contains("VariableFont")).collect();
+    let variable: Vec<&FileRef> = fonts.iter().copied().filter(|r| is_variable(&r.filename)).collect();
+    let fixed: Vec<&FileRef> = fonts.iter().copied().filter(|r| !is_variable(&r.filename)).collect();
     match which {
         "variable" if !variable.is_empty() => variable,
         "static" if !fixed.is_empty() => fixed,
@@ -139,7 +215,7 @@ pub fn preview_file(refs: &[FileRef]) -> Option<&FileRef> {
     fonts
         .iter()
         .find(|r| base(r).ends_with("-Regular.ttf"))
-        .or_else(|| fonts.iter().find(|r| r.filename.contains("VariableFont") && !base(r).contains("Italic")))
+        .or_else(|| fonts.iter().find(|r| is_variable(&r.filename) && !base(r).contains("Italic")))
         .or_else(|| fonts.first())
         .copied()
 }
@@ -183,6 +259,25 @@ mod tests {
     }
 
     #[test]
+    fn repo_folders() {
+        assert_eq!(repo_dir("Roboto Mono"), "robotomono");
+        assert_eq!(repo_dir("M PLUS 1p"), "mplus1p");
+        let listing = r#"[
+            {"name":"OFL.txt","type":"file","download_url":"https://raw/OFL.txt"},
+            {"name":"RobotoMono[wght].ttf","type":"file","download_url":"https://raw/a.ttf"},
+            {"name":"METADATA.pb","type":"file","download_url":"https://raw/m"},
+            {"name":"static","type":"dir","download_url":null}]"#;
+        let (fonts, texts, has_static) = repo_listing(listing, "").unwrap();
+        assert_eq!(fonts.len(), 1);
+        assert_eq!(fonts[0].url, "https://raw/a.ttf");
+        assert_eq!(texts, vec![("OFL.txt".to_string(), "https://raw/OFL.txt".to_string())]);
+        assert!(has_static);
+        let (fonts, _, _) =
+            repo_listing(r#"[{"name":"RobotoMono-Bold.ttf","type":"file","download_url":"https://raw/b"}]"#, "static/").unwrap();
+        assert_eq!(fonts[0].filename, "static/RobotoMono-Bold.ttf");
+    }
+
+    #[test]
     fn picks_files() {
         let r = refs(&[
             "RobotoMono-VariableFont_wght.ttf",
@@ -200,5 +295,9 @@ mod tests {
         assert_eq!(pick_files(&only, "variable").len(), 2);
         let var = refs(&["Inter-Italic-VariableFont_opsz,wght.ttf", "Inter-VariableFont_opsz,wght.ttf"]);
         assert_eq!(preview_file(&var).unwrap().filename, "Inter-VariableFont_opsz,wght.ttf");
+        // The GitHub repository's names.
+        let repo = refs(&["RobotoMono[wght].ttf", "RobotoMono-Italic[wght].ttf", "static/RobotoMono-Regular.ttf"]);
+        assert_eq!(pick_files(&repo, "variable").len(), 2);
+        assert_eq!(pick_files(&repo, "static").len(), 1);
     }
 }
