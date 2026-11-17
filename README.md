@@ -30,7 +30,7 @@ follows the system theme and fits a half-screen tile.
 
 ## Install
 
-On NyxOS, install Fonts from the Store. On Omarchy:
+On NyxOS, install Fonts from the Store or with `nyx install nyx-fonts`. On Omarchy:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/design-nexus/nyx-fonts/main/install.sh | bash -s -- fonts
