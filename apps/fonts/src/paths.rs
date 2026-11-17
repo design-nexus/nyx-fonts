@@ -24,4 +24,3 @@ pub fn fonts_dir() -> PathBuf {
 pub fn preview_dir() -> PathBuf {
     cache_dir().join("preview")
 }
-

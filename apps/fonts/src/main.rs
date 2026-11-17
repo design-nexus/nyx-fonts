@@ -51,9 +51,16 @@ fn start() {
 
 fn main() -> glib::ExitCode {
     nyx_core::app::init(nyx_core::app::App { slug: "nyx-fonts", name: "Fonts" });
+    nyx_core::control::describe_if_asked(&control::description(
+        &std::env::var("NYX_FONTS_APP_ID").unwrap_or_else(|_| APP_ID.to_string()),
+    ));
     nyx_core::migrate::from(&["nexus-fonts"]);
     installed::move_old_fonts();
-    let args: Vec<String> = std::env::args().collect();
+    let mut args: Vec<String> = std::env::args().collect();
+    // Started by D-Bus for an action: GLib leaves this flag to apps that handle their own
+    // command line.
+    let service = args.iter().any(|a| a == "--gapplication-service");
+    args.retain(|a| a != "--gapplication-service");
     if args.iter().any(|a| a == "--help" || a == "-h") {
         print!("{USAGE}");
         return glib::ExitCode::SUCCESS;
@@ -69,9 +76,27 @@ fn main() -> glib::ExitCode {
     // Developer aid: a different id gives a separate instance (a test copy on a virtual
     // monitor), so it doesn't hand its arguments to the copy that's open.
     let id = std::env::var("NYX_FONTS_APP_ID").unwrap_or_else(|_| APP_ID.to_string());
-    let app = gtk::Application::builder().application_id(id).flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE).build();
+    let app = gtk::Application::builder()
+        .application_id(id)
+        .flags(if service {
+            gio::ApplicationFlags::HANDLES_COMMAND_LINE | gio::ApplicationFlags::IS_SERVICE
+        } else {
+            gio::ApplicationFlags::HANDLES_COMMAND_LINE
+        })
+        .build();
     // Nyx Assistant searches and installs fonts through this (primary instance only).
-    app.connect_startup(|app| nyx_core::control::serve(app, control::tools(), control::handle));
+    // The nyx command, Glimpse and Nyx Assistant reach it through this (primary instance
+    // only); a call to a closed app opens its window, which holds what the actions use.
+    let described = control::description(&app.application_id().map(|s| s.to_string()).unwrap_or_default());
+    app.connect_startup(move |app| {
+        let handle_app = app.clone();
+        nyx_core::control::serve(app, described.clone(), move |name, args| {
+            if handle_app.active_window().is_none() {
+                window::present(&handle_app, None);
+            }
+            control::handle(name, args)
+        })
+    });
     app.connect_command_line(|app, cl| {
         let argv: Vec<String> = cl.arguments().iter().map(|a| a.to_string_lossy().to_string()).collect();
         let has = |flag: &str| argv.iter().any(|a| a == flag);
@@ -91,5 +116,5 @@ fn main() -> glib::ExitCode {
         glib::ExitCode::SUCCESS
     });
     app.connect_shutdown(|_| prefs::flush());
-    app.run()
+    app.run_with_args(&args)
 }

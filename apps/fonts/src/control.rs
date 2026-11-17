@@ -4,7 +4,28 @@
 use crate::catalog::{self, FontEntry, Source};
 use crate::{install, installed, system};
 use nyx_core::control::text;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
+
+/// Fonts' description for the control interface (API 2): its actions, the `nyx`
+/// command's `fonts` namespace, and D-Bus activation so a call starts it (with its window,
+/// which holds what the actions work on).
+pub fn description(app_id: &str) -> Value {
+    let mut tools = tools();
+    for t in tools.as_array_mut().into_iter().flatten() {
+        let risk = match t["name"].as_str().unwrap_or_default() {
+            "fonts.installed" => "read_only",
+            "fonts.search" => "read_only",
+            "fonts.install" => "external",
+            _ => "writes",
+        };
+        t["x-nyx"] = json!({"risk": risk});
+    }
+    json!({
+        "tools": tools,
+        "nyx": {"api": 2, "app": app_id, "name": "Fonts", "icon": "io.github.design_nexus.nyx.Fonts", "namespaces": ["fonts"],
+                "aliases": [], "bus_name": app_id, "activation": "dbus", "default": "fonts.search"}
+    })
+}
 
 pub fn tools() -> Value {
     json!([
@@ -55,7 +76,9 @@ pub fn handle(name: &str, args: Value) -> Result<Value, String> {
             families.sort_unstable_by_key(|f| f.to_lowercase());
             families.dedup();
             let ours: Vec<String> = installed::all().into_iter().map(|r| r.family).collect();
-            Ok(json!({"families": families.len(), "names": families.iter().take(200).collect::<Vec<_>>(), "installed_by_fonts": ours}))
+            Ok(
+                json!({"families": families.len(), "names": families.iter().take(200).collect::<Vec<_>>(), "installed_by_fonts": ours}),
+            )
         }
         "fonts.search" => {
             let terms = catalog::terms(&text(&args, "query")?);

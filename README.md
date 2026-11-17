@@ -1,9 +1,9 @@
 # Fonts
 
-A font manager for [Omarchy](https://omarchy.org). Search every family on
+A font manager for NyxOS and [Omarchy](https://omarchy.org). Search every family on
 [Google Fonts](https://fonts.google.com) and every [Nerd Font](https://www.nerdfonts.com),
-choose them by setting a real page with them, and install them with one click. It takes
-its colors from your Omarchy theme and fits a half-screen tile.
+choose them by setting a real page with them, and install them with one click. It
+follows the system theme and fits a half-screen tile.
 
 ## What it does
 
@@ -29,6 +29,8 @@ its colors from your Omarchy theme and fits a half-screen tile.
 - The font lists are cached and refreshed once a day, so browsing works offline.
 
 ## Install
+
+On NyxOS, install Fonts from the Store. On Omarchy:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/design-nexus/nyx-fonts/main/install.sh | bash -s -- fonts

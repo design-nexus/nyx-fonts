@@ -76,4 +76,3 @@ impl Group {
 
 /// A centred message for empty views, with an optional action.
 pub type Action<'a> = Option<(&'a str, Box<dyn Fn()>)>;
-
